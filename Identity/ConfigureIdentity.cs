@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Identity.Models;
 using Identity.Data;
 using Microsoft.EntityFrameworkCore;
+using Identity.Lib;
 
 namespace Identity
 {
@@ -31,9 +32,14 @@ namespace Identity
         options.Lockout.AllowedForNewUsers = true;
       });
       services.AddDbContext<ApplicationIdentityDbContext>(configureDbContext);
+       
       services.AddIdentity<ApplicationUser, ApplicationRole>(configureIdentity)
         .AddEntityFrameworkStores<ApplicationIdentityDbContext>()
+        .AddUserStore<IdentityUserStore>()
+        .AddUserManager<IdentityUserManager>()
+        .AddClaimsPrincipalFactory<IdentityClaimsPrincipalFactory>()
         .AddDefaultTokenProviders();
+      
       services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
         options.TokenValidationParameters = new TokenValidationParameters 
         {

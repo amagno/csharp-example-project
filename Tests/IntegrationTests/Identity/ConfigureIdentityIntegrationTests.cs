@@ -9,14 +9,12 @@ using Identity.Models;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.AspNetCore;
+using Identity.Lib;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Tests.IntegrationTests.Identity
 {
-    enum RolesTest
-    {
-      TestRole1 = 1,
-      TestRole2 = 2
-    }
+
     public class ConfigureIdentityIntegrationTests
     {
       
@@ -29,13 +27,14 @@ namespace Tests.IntegrationTests.Identity
               .AddServices(services, dbOptions => {
                 dbOptions.UseInMemoryDatabase(Guid.NewGuid().ToString());
               });
+            services.AddScoped<IdentityUserManager>();
           })
           .UseStartup<FakeStartup>()
           .Build();
 
-        var userManager = (UserManager<ApplicationUser>)builder
+        var userManager = (IdentityUserManager)builder
           .Services
-          .GetService(typeof(UserManager<ApplicationUser>));
+          .GetService(typeof(IdentityUserManager));
 
         var roleManager = (RoleManager<ApplicationRole>)builder
           .Services
@@ -43,10 +42,10 @@ namespace Tests.IntegrationTests.Identity
 
         var initializer = new InitializeIdentity(userManager, roleManager);
 
-        await initializer.RegisterEnumRoles<RolesTest>().Seed();
+        await initializer.RegisterEnumRoles<ERolesTest>().Seed();
         
         var roles = roleManager.Roles.ToList();
-        var names = Enum.GetNames(typeof(RolesTest)).ToList();
+        var names = Enum.GetNames(typeof(ERolesTest)).ToList();
 
         Assert.True(roles.Count == 2);
 
