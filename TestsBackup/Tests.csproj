@@ -74,6 +74,9 @@
       <Project>{578b1080-7f39-44ff-8001-54bbbc1132ab}</Project>
       <Name>Domain</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Identity\Identity.csproj">
+      <Name>Domain</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

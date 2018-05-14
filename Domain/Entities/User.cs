@@ -10,7 +10,7 @@ namespace Domain.Entities
     {
         
 
-        public string Name { get; }
+        public string Name { get; private set;  }
         public string Email { get; }
         
         private readonly IList<Project> _projects = new List<Project>();
