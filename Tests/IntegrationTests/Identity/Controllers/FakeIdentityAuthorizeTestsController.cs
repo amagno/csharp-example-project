@@ -17,10 +17,10 @@ namespace WebAPI.Controllers
         }
 
         // GET api/values/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("test")]
+        public string TestRoute()
         {
-            return "value";
+            return "test_route";
         }
 
         // POST api/values

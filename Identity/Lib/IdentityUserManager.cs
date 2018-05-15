@@ -5,6 +5,7 @@ using Identity.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Linq;
 
 namespace Identity.Lib
 {
@@ -40,6 +41,23 @@ namespace Identity.Lib
             throw new ArgumentNullException(nameof(user));
         }
         return await userStore.GetRolesAsync(user, CancellationToken);
+    }
+    public async Task<IdentityResult> AddToRolesAsync(ApplicationUser user, IEnumerable<ApplicationRole> roles)
+    {
+        ThrowIfDisposed();
+        var userStore = GetUserStore();
+
+        foreach(var role in roles.Distinct())
+        {
+
+            if (await userStore.IsInRoleAsync(user, role.Name))
+            {
+                return IdentityResult.Failed(ErrorDescriber.UserAlreadyInRole(role.Name));
+            }
+            await userStore.AddToRoleAsync(user, role);
+        }
+
+        return await UpdateAsync(user);
     }
   }
 }

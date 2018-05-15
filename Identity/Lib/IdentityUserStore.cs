@@ -18,6 +18,7 @@ namespace Identity.Lib
     private DbSet<IdentityUserClaim<Guid>> UserClaims { get { return Context.Set<IdentityUserClaim<Guid>>(); } }
     private DbSet<IdentityUserRole<Guid>> UserRoles { get { return Context.Set<IdentityUserRole<Guid>>(); } }
     public new ApplicationIdentityDbContext Context { get; private set; }
+
     public IdentityUserStore(ApplicationIdentityDbContext context, IdentityErrorDescriber describer = null) : base(context, describer)
     {
         Context = context;
@@ -37,7 +38,21 @@ namespace Identity.Lib
                     where userRole.UserId.Equals(user.Id)
                     select role;
         
-        return await query.ToListAsync();      
+        return await query.ToListAsync(); 
+    }
+    public async Task AddToRoleAsync(ApplicationUser user, ApplicationRole role, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+        if (string.IsNullOrWhiteSpace(role.Name))
+        {
+            throw new ArgumentException("Please role give a name");
+        }
+        await UserRoles.AddAsync(CreateUserRole(user, role));
     }
   }
 }

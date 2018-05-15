@@ -32,14 +32,11 @@ namespace Identity
         options.Lockout.AllowedForNewUsers = true;
       });
       services.AddDbContext<ApplicationIdentityDbContext>(configureDbContext);
-       
       services.AddIdentity<ApplicationUser, ApplicationRole>(configureIdentity)
         .AddEntityFrameworkStores<ApplicationIdentityDbContext>()
-        .AddUserStore<IdentityUserStore>()
+        .AddUserStore<IdentityUserStore>()        
         .AddUserManager<IdentityUserManager>()
-        .AddClaimsPrincipalFactory<IdentityClaimsPrincipalFactory>()
         .AddDefaultTokenProviders();
-      
       services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
         options.TokenValidationParameters = new TokenValidationParameters 
         {

@@ -17,8 +17,8 @@ namespace Identity
       private readonly RoleManager<ApplicationRole> _roleManager;
 
     public InitializeIdentity(
-      UserManager<ApplicationUser> userManager, 
-      RoleManager<ApplicationRole> roleManager
+      RoleManager<ApplicationRole> roleManager,
+      UserManager<ApplicationUser> userManager = null      
       )
     {
       _userManager = userManager;

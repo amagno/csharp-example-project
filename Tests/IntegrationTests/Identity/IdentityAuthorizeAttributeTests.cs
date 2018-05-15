@@ -60,12 +60,16 @@ namespace Tests.IntegrationTests.Identity
       public async Task TestInitializeWebHost()
       {
         var client = _testServer.CreateClient();
-        var response = await client.GetAsync("/");
+        var response1 = await client.GetAsync("/");
+        var response2 = await client.GetAsync("/test");
 
-        response.EnsureSuccessStatusCode();
-        var content = await response.Content.ReadAsStringAsync();
+        response1.EnsureSuccessStatusCode();
+        response2.EnsureSuccessStatusCode();
+        var result1 = await response1.Content.ReadAsStringAsync();
+        var result2 = await response2.Content.ReadAsStringAsync();
 
-        Assert.Equal("test", content);
+        Assert.Equal("test", result1);
+        Assert.Equal("test_route", result2);
       }
     }
 }
