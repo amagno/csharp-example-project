@@ -1,8 +1,15 @@
 language: csharp
 solution: csharp-example-project.sln
 mono: none
-dotnet: 2.0.3
+dotnet: 2.1.4
+os: linux
+dist: trusty
+sudo: false
+env:
+  global:
+    - DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+    - DOTNET_CLI_TELEMETRY_OPTOUT: 1
 script:
   - dotnet restore
-  - dotnet test
+  - cd ./Tests/ && dotnet xunit
  
