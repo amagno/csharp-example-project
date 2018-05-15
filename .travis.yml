@@ -1,0 +1,8 @@
+language: csharp
+solution: csharp-example-project.sln
+mono: none
+dotnet: 2.0.3
+script:
+  - dotnet restore
+  - dotnet test
+ 
