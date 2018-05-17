@@ -13,32 +13,34 @@ using Microsoft.AspNetCore;
 using Identity.Lib;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Microsoft.IdentityModel.Tokens;
 
-namespace Tests.IntegrationTests.Identity
+namespace Tests.Identity
 {
   public class WebHostFixture : IDisposable
   {
     private readonly IWebHost _webHost;
-    private IdentityUserManager _userManager;
+    private UserManager<ApplicationUser> _userManager;
     private RoleManager<ApplicationRole> _roleManager;
     public WebHostFixture()
     {
-      _webHost = WebHost.CreateDefaultBuilder()
-          .ConfigureServices(services => {
-            ConfigureIdentity
-              .AddServices(services, dbOptions => {
-                dbOptions.UseInMemoryDatabase(Guid.NewGuid().ToString());
-              });
-
-              var provider = services.BuildServiceProvider();
-              _roleManager = provider.GetService<RoleManager<ApplicationRole>>();
-              _userManager = provider.GetService<IdentityUserManager>();
-          })
-          .UseStartup<FakeStartup>()
-          .Build();
+        _webHost = WebHost.CreateDefaultBuilder()
+            .ConfigureServices(services => {
+                new ConfigureIdentity()
+                    .SetDbContextConfig(dbOptions => {
+                        dbOptions.UseInMemoryDatabase(Guid.NewGuid().ToString());
+                    })
+                    .SetTokenParameters(new TokenValidationParameters {})
+                    .AddServices(services);
+                var provider = services.BuildServiceProvider();
+                _roleManager = provider.GetService<RoleManager<ApplicationRole>>();
+                _userManager = provider.GetService<UserManager<ApplicationUser>>();
+            })
+            .UseStartup<FakeStartup>()
+            .Build();
 
     }
-    public IdentityUserManager GetUserManager()
+    public UserManager<ApplicationUser> GetUserManager()
     {
       return _userManager ?? throw new Exception("User manager is null");
     }
@@ -64,18 +66,15 @@ namespace Tests.IntegrationTests.Identity
 
             var initializer = new InitializeIdentity(roleManager);
 
-            await initializer.RegisterEnumRoles<ERolesTest>().Seed();
+            await initializer.RegisterEnumClaims<EPermissionsTest>().SeedClaimsAsync();
         
             var roles = roleManager.Roles.ToList();
-            var names = Enum.GetNames(typeof(ERolesTest)).ToList();
-            var myRole = roleManager.FindByNameAsync(names[0]);
-            Assert.True(roles.Count == 2);
-            Assert.True(myRole != null);
+            var claims = await roleManager.GetClaimsAsync(roles[0]);
 
-            for (var i = 0; i < names.Count; i++)
-            {
-                Assert.Equal(names[i], roles[i].Name);
-            }
+            Assert.True(roles.Count == 1);
+            Assert.True(claims.Count == 2);
+            Assert.Equal("1", claims[0].Value);
+            Assert.Equal("2", claims[1].Value);
         }
       }
       [Fact]
@@ -91,12 +90,16 @@ namespace Tests.IntegrationTests.Identity
             };
 
             var created = await userManager.CreateAsync(user, "Aa@123456");
+            var find = await userManager.FindByEmailAsync(user.Email);
 
             Assert.True(created.Succeeded);
+            Assert.Equal(find.Email, user.Email);
+            Assert.Equal(1, userManager.Users.ToList().Count);
+
         }
       }
       [Fact]
-      public async Task TestCreateUserRoles()
+      public async Task TestCreateUserClaims()
       {
         using (var fixture = new WebHostFixture())
         {
@@ -105,10 +108,10 @@ namespace Tests.IntegrationTests.Identity
 
             var initializer = new InitializeIdentity(roleManager);
 
-            await initializer.RegisterEnumRoles<ERolesTest>().Seed();
-        
-            var roles = roleManager.Roles.ToList();
-            var names = Enum.GetNames(typeof(ERolesTest)).ToList();
+            await initializer.RegisterEnumClaims<EPermissionsTest>().SeedClaimsAsync();
+            var defaultRole = roleManager.Roles.ToList()[0];
+            var claims = await roleManager.GetClaimsAsync(defaultRole);
+            // var names = Enum.GetNames(typeof(ERolesTest)).ToList();
 
 
             var user = new ApplicationUser {
@@ -118,13 +121,13 @@ namespace Tests.IntegrationTests.Identity
             // IN SEQUENCE
             var created = await userManager.CreateAsync(user, "Aa@123456");
             // 
-            var result = await userManager.AddToRolesAsync(user, roles); 
+            var result = await userManager.AddClaimsAsync(user, claims);
             //  
-            var userRoles = await userManager.GetRolesAsync(user);
+            var userClaims = await userManager.GetClaimsAsync(user);
 
             Assert.True(result.Succeeded);
-            Assert.True(roles.Count == 2);
-            Assert.True(userRoles.Count == 2);
+            Assert.Equal(2, claims.Count);
+            Assert.Equal(2, userClaims.Count);
         }
       }
     }

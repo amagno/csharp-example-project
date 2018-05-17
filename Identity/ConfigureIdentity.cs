@@ -15,42 +15,66 @@ namespace Identity
 {
   public class ConfigureIdentity
   {
-    private static readonly IConfiguration _config = new ConfigurationBuilder()
-                        .SetBasePath(Directory.GetCurrentDirectory())
-                        .AddJsonFile("appsettings.json")
-                        .Build();
-    public static void AddServices(
-      IServiceCollection services,
-      Action<DbContextOptionsBuilder> setupDbContext = null,      
-      Action<IdentityOptions> setupIdentity = null
-      )
+    private readonly IConfiguration _config;
+    private Action<IdentityOptions> _identityOptions;
+    private Action<DbContextOptionsBuilder> _dbOptions;
+    private TokenValidationParameters _tokenParameters;
+
+    public ConfigureIdentity(IConfiguration config = null)
     {
-      var configureDbContext = setupDbContext ?? new Action<DbContextOptionsBuilder>((options) => {
+      _config = config;
+    }
+
+    public ConfigureIdentity SetDbContextConfig(Action<DbContextOptionsBuilder> setupDbContext)
+    {
+      _dbOptions = setupDbContext;
+      return this;
+    }
+    public ConfigureIdentity SetTokenParameters(TokenValidationParameters tokenParameters)
+    {
+      _tokenParameters = tokenParameters;
+      return this;
+    }
+    public ConfigureIdentity SetIdentityOptions(Action<IdentityOptions> identityOptions)
+    {
+      _identityOptions = identityOptions;
+      return this;
+    }
+    public void AddServices(IServiceCollection services)
+    {
+      if ((_config == null && _dbOptions == null) || (_config == null && _tokenParameters == null)) 
+      {
+        throw new ArgumentNullException();
+      }
+
+      var configureDbContext = _dbOptions ?? new Action<DbContextOptionsBuilder>((options) => {
         options.UseSqlServer(_config.GetConnectionString("DefaultConnection"));
       });
-      var configureIdentity = setupIdentity ?? new Action<IdentityOptions>((options) => {
+      var configureIdentity = _identityOptions ?? new Action<IdentityOptions>((options) => {
         options.Lockout.AllowedForNewUsers = true;
       });
+
+      var configureJwtToken = _tokenParameters ?? new TokenValidationParameters {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = _config["Issuer"],
+        ValidAudience = _config["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]))
+      };
+      // Adicionando servicços
       services.AddDbContext<ApplicationIdentityDbContext>(configureDbContext);
       services.AddIdentity<ApplicationUser, ApplicationRole>(configureIdentity)
         .AddEntityFrameworkStores<ApplicationIdentityDbContext>()
-        .AddUserStore<IdentityUserStore>()        
-        .AddUserManager<IdentityUserManager>()
-        .AddClaimsPrincipalFactory<IdentityClaimsPrincipalFactory>()        
+        // .AddUserStore<IdentityUserStore>()        
+        // .AddUserManager<IdentityUserManager>()
+        // .AddClaimsPrincipalFactory<IdentityClaimsPrincipalFactory>()        
         .AddDefaultTokenProviders();
         
       services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
-        options.TokenValidationParameters = new TokenValidationParameters 
-        {
-          ValidateIssuer = true,
-          ValidateAudience = true,
-          ValidateLifetime = true,
-          ValidateIssuerSigningKey = true,
-          ValidIssuer = _config["Issuer"],
-          ValidAudience = _config["Audience"],
-          IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]))
-        };
-      });     
+        options.TokenValidationParameters = configureJwtToken;
+      });
     }
   }
 }

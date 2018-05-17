@@ -18,25 +18,44 @@ using System.IO;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Http;
 using System.Net;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+using WebAPI.Controllers;
+using System.Net.Http;
+using System.Collections.Generic;
+using Identity.Lib;
 
-namespace Tests.IntegrationTests.Identity
+namespace Tests.Identity
 {
-    public class IdentityAuthorizeAttributeTests
+    public class IdentityAuthorizeAttributeTests : IDisposable
     {
-      private readonly IWebHostBuilder _hostBuider;
       private readonly TestServer _testServer;
-
-
       public IdentityAuthorizeAttributeTests()
       {
-        _hostBuider = new WebHostBuilder()
+        var tokenConfig = new TokenValidationParameters {
+          ValidateIssuer = true,
+          ValidateAudience = true,
+          ValidateLifetime = true,
+          ValidateIssuerSigningKey = true,
+          ValidIssuer = "localhost",
+          ValidAudience = "localhost",
+          IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("test_key"))
+        };
+        var builder = new WebHostBuilder()
           .ConfigureServices(services => {
-            ConfigureIdentity
-              .AddServices(services, dbOptions => {
-                dbOptions.UseInMemoryDatabase(Guid.NewGuid().ToString());
-              });
-            
-            // services.AddRouting();
+            new ConfigureIdentity()
+                .SetTokenParameters(tokenConfig)
+                .SetDbContextConfig(dbOptions => {
+                    dbOptions.UseInMemoryDatabase(Guid.NewGuid().ToString());
+                })
+                .SetIdentityOptions(identityOptions => {
+                    identityOptions.Lockout.AllowedForNewUsers = true;
+                    identityOptions.SignIn.RequireConfirmedEmail = false;
+                    identityOptions.SignIn.RequireConfirmedPhoneNumber = false;
+                })
+                .AddServices(services);
+
             services.AddMvc(options => {
               options.Filters.Add<IdentityAuthorizeAttribute>();
             });
@@ -45,18 +64,14 @@ namespace Tests.IntegrationTests.Identity
             app.UseMvc(routes => {
               routes.MapRoute("default", "{controller=FakeIdentityAuthorizeTestsController}/{action=Index}/{id?}");
             });
-            // var routerBuilder = new RouteBuilder(app);
-            // RequestDelegate getIndex = c => {
-            //   return c.Response.WriteAsync("test");
-            // };
-            // routerBuilder.MapGet("test", getIndex);
-
-            // var routes = routerBuilder.Build();
-            // app.UseRouter(routes);
-
+            app.UseAuthentication();
           });
         
-        _testServer = new TestServer(_hostBuider);
+        _testServer = new TestServer(builder);
+      }
+      public void Dispose()
+      {
+        _testServer.Dispose();
       }
 
       [Fact]
@@ -64,15 +79,11 @@ namespace Tests.IntegrationTests.Identity
       {
         var client = _testServer.CreateClient();
         var response1 = await client.GetAsync("/");
-        var response2 = await client.GetAsync("/test");
 
         response1.EnsureSuccessStatusCode();
-        response2.EnsureSuccessStatusCode();
         var result1 = await response1.Content.ReadAsStringAsync();
-        var result2 = await response2.Content.ReadAsStringAsync();
 
         Assert.Equal("test", result1);
-        Assert.Equal("test_route", result2);
       }
       [Fact]
       public async Task TestAuthorizedRouteGetErrorWebHost()
@@ -84,14 +95,57 @@ namespace Tests.IntegrationTests.Identity
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
       }
-      public async Task TestSigin()
+      [Fact]
+      public async Task TestRegisterAndLogin()
       {
         var client = _testServer.CreateClient();
-        var response = await client.GetAsync("/sigin");
+        var data = new Dictionary<string, string>();
+
+        data.Add("email", "test@gmail.com");
+        data.Add("password", "Aa@123456");
+        data.Add("username", "testing");
+
+        var formData = new FormUrlEncodedContent(data);
+
+        // var responseRegister = await client.PostAsync("/register", formData);
+        var responseLogin = await client.PostAsync("/register_login", formData);
+        
+        // responseRegister.EnsureSuccessStatusCode();
+        responseLogin.EnsureSuccessStatusCode();
+
+        var validator = new JwtSecurityTokenHandler();
+        var resText = await responseLogin.Content.ReadAsStringAsync();
+        var read = validator.CanReadToken(resText);
+        Assert.Equal(true, read);
+        
+      }
+      [Fact]
+      public async Task TestRegister()
+      {
+        var client = _testServer.CreateClient();
+        // var userManager = _testServer.Host.Services.GetService(typeof(UserManager<ApplicationUser>)) as UserManager<ApplicationUser>;
+
+        var data = new Dictionary<string, string>();
+        data.Add("username", "testing");
+        data.Add("email", "test@gmail.com");
+        data.Add("password", "Aa@123456");
+        var formData = new FormUrlEncodedContent(data);
+
+
+        var response = await client.PostAsync("/register", formData);
+        response.EnsureSuccessStatusCode();
 
         var status = response.StatusCode;
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        var content = await response.Content.ReadAsStringAsync();
+        // var users = userManager.Users.ToList();
+        Console.WriteLine("GENERATED GUID => ");
+        Console.WriteLine(content);
+        
+        Guid parsed = Guid.Parse(content);
+        Assert.Equal(HttpStatusCode.Created, status);
+        
       }
-    }
+
+  
+  }
 }

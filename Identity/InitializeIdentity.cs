@@ -6,13 +6,14 @@ using System.Collections.Generic;
 using Identity.Lib;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace Identity
 {
   public class InitializeIdentity
   {
 
-      private IList<ApplicationRole> _roles;
+      private IList<Claim> _claims;
       private readonly UserManager<ApplicationUser> _userManager; 
       private readonly RoleManager<ApplicationRole> _roleManager;
 
@@ -24,28 +25,36 @@ namespace Identity
       _userManager = userManager;
       _roleManager = roleManager;
     }
-    public InitializeIdentity RegisterEnumRoles<EnumRoles>()
+    public InitializeIdentity RegisterEnumClaims<TEnum>()
     {
-      _roles = new TranformEnumRoles<EnumRoles>().Transform();
+      _claims = new TranformEnum<TEnum>().ToClaimList();
       return this;
     }
-    public async Task Seed()
+    public async Task<ApplicationRole> CreateRoleAsyncIfNotExists(string roleName)
     {
-      if (_roles.Count == 0)
-      {
+      var exists = await _roleManager.RoleExistsAsync(roleName);
+      if (exists) {
+        return await _roleManager.FindByNameAsync(roleName);
+      }
+      var role = new ApplicationRole { Name = roleName };
+      var createdRole = await _roleManager.CreateAsync(role);
+
+      if (!createdRole.Succeeded) {
+        throw new Exception(createdRole.Errors.ToString());
+      }
+      return role;
+    }
+    public async Task SeedClaimsAsync(string defaultRoleName = "default")
+    {
+      if (_claims.Count == 0) {
         throw new Exception("Please register enum roles whit: 'RegisterEnumRoles<Enum>()'");
       }
-      foreach(var role in _roles) 
+      var defaultRole = await CreateRoleAsyncIfNotExists(defaultRoleName);
+      foreach(var claim in _claims) 
       {
-        var exists = await _roleManager.RoleExistsAsync(role.Name);
-        if (!exists)
-        {
-         var result = await _roleManager.CreateAsync(role);
-
-         if (!result.Succeeded)
-         {
-           throw new Exception(result.Errors.ToString());
-         }
+        var createdClaim = await _roleManager.AddClaimAsync(defaultRole, claim);
+        if (!createdClaim.Succeeded) {
+          throw new Exception(createdClaim.Errors.ToString());
         }
       }
     }

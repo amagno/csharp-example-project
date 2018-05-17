@@ -7,8 +7,6 @@ namespace Identity.Models
 {
 
     public class ApplicationRole : IdentityRole<Guid>
-    {
-      public int Number { get; set; }      
-        
+    {     
     }
 }

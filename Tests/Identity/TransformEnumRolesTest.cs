@@ -2,36 +2,26 @@ using System.Collections.Generic;
 using Identity.Models;
 using Identity.Lib;
 using Xunit;
+using Identity;
+using System.Security.Claims;
+using System;
+using System.Linq;
 
-namespace Tests.UnitTests.Identity
+namespace Tests.Identity
 {
-  enum RolesFixture
-  {
-      TestRole1 = 1,
-      TestRole2 = 2
-  }
   public class TranformEnumRolesTest
   {
     [Fact]
-    public void TranformTest()
+    public void TranformToClaimsListTest()
     {
-      var roles = new List<ApplicationRole> {
-        new ApplicationRole {
-          Name = "TestRole1",
-          Number = 1
-        },
-        new ApplicationRole {
-          Name = "TestRole2",
-          Number = 2
-        },
-      };
 
-      var transformed = new TranformEnumRoles<RolesFixture>().Transform();
+      var names = Enum.GetNames(typeof(EPermissionsTest)).ToList();
+      var transformed = new TranformEnum<EPermissionsTest>().ToClaimList();
 
-      for(var i = 0; i < roles.Count; i++)
+      for(var i = 0; i < names.Count; i++)
       {
-        Assert.Equal(roles[i].Name, transformed[i].Name);
-        Assert.Equal(roles[i].Number, transformed[i].Number);
+        Assert.Equal((i + 1).ToString(), transformed[i].Value);
+        Assert.Equal(ApplicationClaimTypes.Permission, transformed[i].Type);
       }
     }
   }

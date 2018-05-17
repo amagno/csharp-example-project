@@ -13,7 +13,7 @@ namespace Identity.Lib
         public static string Generate(IEnumerable<Claim> claims, string key, string issuer, DateTime? expires)
         {
             var symmKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-            var credentials = new SigningCredentials(symmKey, SecurityAlgorithms.HmacSha256);
+            var credentials = new SigningCredentials(symmKey, SecurityAlgorithms.EcdsaSha256);
 
             var token = new JwtSecurityToken(
                 issuer,
