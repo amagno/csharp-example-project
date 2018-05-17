@@ -17,6 +17,7 @@ using Microsoft.Extensions.Options;
 using System.IO;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Http;
+using System.Net;
 
 namespace Tests.IntegrationTests.Identity
 {
@@ -36,7 +37,9 @@ namespace Tests.IntegrationTests.Identity
               });
             
             // services.AddRouting();
-            services.AddMvc();
+            services.AddMvc(options => {
+              options.Filters.Add<IdentityAuthorizeAttribute>();
+            });
           })
           .Configure(app => {
             app.UseMvc(routes => {
@@ -70,6 +73,25 @@ namespace Tests.IntegrationTests.Identity
 
         Assert.Equal("test", result1);
         Assert.Equal("test_route", result2);
+      }
+      [Fact]
+      public async Task TestAuthorizedRouteGetErrorWebHost()
+      {
+        var client = _testServer.CreateClient();
+        var response = await client.GetAsync("/auth");
+
+        var status = response.StatusCode;
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+      }
+      public async Task TestSigin()
+      {
+        var client = _testServer.CreateClient();
+        var response = await client.GetAsync("/sigin");
+
+        var status = response.StatusCode;
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
       }
     }
 }

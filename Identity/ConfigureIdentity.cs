@@ -36,7 +36,9 @@ namespace Identity
         .AddEntityFrameworkStores<ApplicationIdentityDbContext>()
         .AddUserStore<IdentityUserStore>()        
         .AddUserManager<IdentityUserManager>()
+        .AddClaimsPrincipalFactory<IdentityClaimsPrincipalFactory>()        
         .AddDefaultTokenProviders();
+        
       services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
         options.TokenValidationParameters = new TokenValidationParameters 
         {

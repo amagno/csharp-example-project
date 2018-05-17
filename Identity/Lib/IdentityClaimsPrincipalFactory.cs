@@ -9,18 +9,22 @@ using System.Threading.Tasks;
 
 namespace Identity.Lib
 {
-  class IdentityClaimsPrincipalFactory : UserClaimsPrincipalFactory<ApplicationUser, ApplicationRole>
+  class IdentityClaimsPrincipalFactory : 
+    UserClaimsPrincipalFactory<ApplicationUser>, 
+    IUserClaimsPrincipalFactory<ApplicationUser>
   {
+    public RoleManager<ApplicationRole> RoleManager { get; }
     public new IdentityUserManager UserManager { get; } 
     public IdentityClaimsPrincipalFactory(
         IdentityUserManager userManager, 
         RoleManager<ApplicationRole> roleManager, 
         IOptions<IdentityOptions> options
-        ) : base(userManager, roleManager, options)
+        ) : base(userManager, options)
     {
+        RoleManager = roleManager;
         UserManager = userManager;
     }
-    public virtual new async Task<IdentityClaimsPrincipal> CreateAsync(ApplicationUser user)
+    public override async Task<ClaimsPrincipal> CreateAsync(ApplicationUser user)
     {
         if (user == null)
         {
@@ -28,7 +32,7 @@ namespace Identity.Lib
         }
         var id = await GenerateClaimsAsync(user);
         
-        return new IdentityClaimsPrincipal(id);
+        return new ClaimsPrincipal(id);
     }
 
     protected override async Task<ClaimsIdentity> GenerateClaimsAsync(ApplicationUser user)

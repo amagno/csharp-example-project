@@ -13,31 +13,44 @@ namespace Identity
 {
   public class IdentityAuthorizeAttribute : TypeFilterAttribute
   {
-    public IdentityAuthorizeAttribute(params int[] roles) : base(typeof(IdentityAuthorizeFilter))
+    public IdentityAuthorizeAttribute() : base(typeof(IdentityAuthorizeFilter))
     {
-      Arguments = new object[] { roles };
+      // var cast = (int[])roles;
+      // if (cast == null) 
+      // {
+      //   throw new Exception("Unable to cast roles");
+      // }
+      // var args = roles.ToList().Select(v => Convert.ToInt32(v));
+      // var t = Convert.ToInt32(role.ToString());
+      // Arguments = new object[] { t };
     }
   }
   public class IdentityAuthorizeFilter : IAuthorizationFilter
   {
-    private readonly IList<int> _roles;
-    public IdentityAuthorizeFilter(int[] roles)
+    // private readonly IList<int> _roles;
+    public IdentityAuthorizeFilter()
     {
-        _roles = roles;
+        // _roles = roles;
     }
 
     public void OnAuthorization(AuthorizationFilterContext context)
     {
-      var claims = context.HttpContext.User as IdentityClaimsPrincipal;
-
-      for (int i = 0; i < _roles.Count; i++)
+      var claims = context.HttpContext.User;
+      
+      if (!claims.Identity.IsAuthenticated) 
       {
-        if (!claims.IsInRole(_roles[i]))
-        {
-          context.Result = new UnauthorizedResult();
-          break; 
-        }
+        context.Result =  new UnauthorizedResult();
+        return;
       }
+
+      // for (int i = 0; i < _roles.Count; i++)
+      // {
+      //   if (!claims.IsInRole(_roles[i]))
+      //   {
+      //     context.Result = new UnauthorizedResult();
+      //     break;
+      //   }
+      // }
     }
   }
 }

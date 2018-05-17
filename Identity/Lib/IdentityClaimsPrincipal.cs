@@ -36,7 +36,7 @@ namespace Identity.Lib
 
     public virtual bool IsInRole(int role)
     {
-        return true;
+        return false;
     }
   }
 }
