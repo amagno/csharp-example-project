@@ -7,21 +7,13 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.Identity;
 using Identity.Models;
 using System.Threading.Tasks;
-using System.Linq;
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System.IO;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Http;
 using System.Net;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
-using WebAPI.Controllers;
 using System.Net.Http;
 using System.Collections.Generic;
 using Identity.Lib;
@@ -30,10 +22,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace Tests.Identity
 {
-    public class IdentityAuthorizeAttributeTests : IDisposable
+  public class AuthorizeIntegrationTests : IDisposable
     {
       private readonly TestServer _testServer;
-      public IdentityAuthorizeAttributeTests()
+      public AuthorizeIntegrationTests()
       {
         var tokenConfig = new TokenValidationParameters {
           ValidateIssuer = false,

@@ -36,13 +36,13 @@ namespace WebAPI.Controllers
         }
 
         // Test authorized route
-        [IdentityAuthorize]
+        [Authorize]
         [HttpGet("auth")]
         public string AuthorizedRoute()
         {
             return "authorized!";
         }
-        [IdentityAuthorize(PermissionsTest.Permission1, PermissionsTest.Permission2)]
+        [PermissionAuthorize(PermissionsTest.Permission1, PermissionsTest.Permission2)]
         [HttpGet("auth_roles")]
         public string AuthorizedRoutePermission()
         {

@@ -11,9 +11,9 @@ using System.Collections.Generic;
 
 namespace Identity
 {
-  public class IdentityAuthorizeAttribute : TypeFilterAttribute
+  public class PermissionAuthorizeAttribute : TypeFilterAttribute
   {
-    public IdentityAuthorizeAttribute(params int[] perms) : base(typeof(IdentityAuthorizeFilter))
+    public PermissionAuthorizeAttribute(params int[] perms) : base(typeof(PermissionAuthorizeFilter))
     {
       // var cast = (int[])roles;
       // if (cast == null) 
@@ -25,10 +25,10 @@ namespace Identity
       Arguments = new object[] { perms };
     }
   }
-  public class IdentityAuthorizeFilter : IAuthorizationFilter
+  public class PermissionAuthorizeFilter : IAuthorizationFilter
   {
     private readonly IList<int> _perms;
-    public IdentityAuthorizeFilter(int[] perms)
+    public PermissionAuthorizeFilter(int[] perms)
     {
         _perms = perms;
     }
