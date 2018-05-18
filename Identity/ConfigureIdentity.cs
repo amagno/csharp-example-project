@@ -24,7 +24,6 @@ namespace Identity
     {
       _config = config;
     }
-
     public ConfigureIdentity SetDbContextConfig(Action<DbContextOptionsBuilder> setupDbContext)
     {
       _dbOptions = setupDbContext;

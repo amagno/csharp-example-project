@@ -40,7 +40,7 @@ namespace Tests.Identity
           ValidateIssuerSigningKey = true,
           ValidIssuer = "localhost",
           ValidAudience = "localhost",
-          IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("test_key"))
+          IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JWTConfig.Key))
         };
         var builder = new WebHostBuilder()
           .ConfigureServices(services => {
@@ -107,16 +107,23 @@ namespace Tests.Identity
 
         var formData = new FormUrlEncodedContent(data);
 
-        // var responseRegister = await client.PostAsync("/register", formData);
-        var responseLogin = await client.PostAsync("/register_login", formData);
+        var responseRegister = await client.PostAsync("/register", formData);
         
-        // responseRegister.EnsureSuccessStatusCode();
+        responseRegister.EnsureSuccessStatusCode();
+
+        var created = await responseRegister.Content.ReadAsStringAsync();
+
+        Console.WriteLine("Create at route => ");
+        Console.WriteLine(created);
+
+        var responseLogin = await client.PostAsync("/login", formData);
+        
         responseLogin.EnsureSuccessStatusCode();
 
         var validator = new JwtSecurityTokenHandler();
         var resText = await responseLogin.Content.ReadAsStringAsync();
         var read = validator.CanReadToken(resText);
-        Assert.Equal(true, read);
+        Assert.True(read);
         
       }
       [Fact]

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Identity.Models;
 using System.ComponentModel.DataAnnotations;
 using Identity.Lib;
+using Tests.Identity;
 
 namespace WebAPI.Controllers
 {   
@@ -35,7 +36,7 @@ namespace WebAPI.Controllers
         }
 
         // Test sigin in identity and return response with JWT Token
-        [HttpPost("register_login")]
+        [HttpPost("login")]
         public async Task<IActionResult> Login(
             [FromForm] RegisterModel signInData, 
             [FromServices] SignInManager<ApplicationUser> signInManager,
@@ -46,8 +47,10 @@ namespace WebAPI.Controllers
             {
                 throw new Exception("parameters invalid");
             }
-            var user = new ApplicationUser { UserName = signInData.username, Email = signInData.email };
-            await userManager.CreateAsync(user, signInData.password);
+            // var user = new ApplicationUser { UserName = signInData.username, Email = signInData.email };
+            // await userManager.CreateAsync(user, signInData.password);
+            var user = await userManager.FindByEmailAsync(signInData.email);
+
             if (user == null || user.Id == null) 
             {
                 throw new Exception("user invalid");
@@ -58,7 +61,7 @@ namespace WebAPI.Controllers
                 throw new Exception("login invalid");
             }
             var principal = await signInManager.CreateUserPrincipalAsync(user);            
-            var jwt = GenerateJWT.Generate(principal.Claims, "tes_key", "localhost", DateTime.Today.AddHours(12));
+            var jwt = GenerateJWT.Generate(principal.Claims, JWTConfig.Key, "localhost", DateTime.Today.AddHours(1));
             return Ok(jwt);
         }
         // Test register
