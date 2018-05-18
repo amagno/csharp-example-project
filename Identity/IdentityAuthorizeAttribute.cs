@@ -39,7 +39,7 @@ namespace Identity
       
       if (!claims.Identity.IsAuthenticated) 
       {
-        context.Result =  new UnauthorizedResult();
+        context.Result = new UnauthorizedResult();
         return;
       }
 

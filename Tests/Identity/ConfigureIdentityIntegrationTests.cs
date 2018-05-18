@@ -66,7 +66,7 @@ namespace Tests.Identity
 
             var initializer = new InitializeIdentity(roleManager);
 
-            await initializer.RegisterEnumClaims<EPermissionsTest>().SeedClaimsAsync();
+            await initializer.RegisterPermissions(typeof(PermissionsTest)).SeedClaimsAsync();
         
             var roles = roleManager.Roles.ToList();
             var claims = await roleManager.GetClaimsAsync(roles[0]);
@@ -91,10 +91,10 @@ namespace Tests.Identity
 
             var created = await userManager.CreateAsync(user, "Aa@123456");
             var find = await userManager.FindByEmailAsync(user.Email);
-
+            var users = userManager.Users.ToList();
             Assert.True(created.Succeeded);
             Assert.Equal(find.Email, user.Email);
-            Assert.Equal(1, userManager.Users.ToList().Count);
+            Assert.Single(users);
 
         }
       }
@@ -108,7 +108,7 @@ namespace Tests.Identity
 
             var initializer = new InitializeIdentity(roleManager);
 
-            await initializer.RegisterEnumClaims<EPermissionsTest>().SeedClaimsAsync();
+            await initializer.RegisterPermissions(typeof(PermissionsTest)).SeedClaimsAsync();
             var defaultRole = roleManager.Roles.ToList()[0];
             var claims = await roleManager.GetClaimsAsync(defaultRole);
             // var names = Enum.GetNames(typeof(ERolesTest)).ToList();
@@ -126,8 +126,8 @@ namespace Tests.Identity
             var userClaims = await userManager.GetClaimsAsync(user);
 
             Assert.True(result.Succeeded);
-            Assert.Equal(2, claims.Count);
-            Assert.Equal(2, userClaims.Count);
+            Assert.Equal(2, claims.Count());
+            Assert.Equal(2, userClaims.Count());
         }
       }
     }

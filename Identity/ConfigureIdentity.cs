@@ -71,8 +71,17 @@ namespace Identity
         // .AddClaimsPrincipalFactory<IdentityClaimsPrincipalFactory>()        
         .AddDefaultTokenProviders();
         
-      services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
+      services.AddAuthentication(options => {
+        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
+      }).AddJwtBearer(options => {
+        // options.Audience = configureJwtToken.ValidAudience ?? throw new Exception("Invalid audience");
+        // options.Authority = configureJwtToken.ValidIssuer ?? throw new Exception("Invalid issuer");
+        options.RequireHttpsMetadata = false;
         options.TokenValidationParameters = configureJwtToken;
+        options.IncludeErrorDetails = true;
       });
     }
   }

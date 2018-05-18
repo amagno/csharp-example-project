@@ -25,9 +25,12 @@ namespace Identity
       _userManager = userManager;
       _roleManager = roleManager;
     }
-    public InitializeIdentity RegisterEnumClaims<TEnum>()
+    public InitializeIdentity RegisterPermissions(Type type)
     {
-      _claims = new TranformEnum<TEnum>().ToClaimList();
+      if (!type.IsClass) {
+        throw new ArgumentException("type");
+      }
+      _claims = new TranformPermissions(type).ToClaimList();
       return this;
     }
     public async Task<ApplicationRole> CreateRoleAsyncIfNotExists(string roleName)
