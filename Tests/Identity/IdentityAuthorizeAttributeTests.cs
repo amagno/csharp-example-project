@@ -62,7 +62,7 @@ namespace Tests.Identity
             
            
             services.AddMvc(options => {
-              options.Filters.Add<IdentityAuthorizeAttribute>();
+              // options.Filters.Add<IdentityAuthorizeAttribute>();
             });
           })
           .Configure(app => {
@@ -192,12 +192,16 @@ namespace Tests.Identity
         Assert.Equal("authorized!", result);
       }
       [Fact]
-      public async Task TestUserAsUnauthorizedRoles()
+      public async Task TestAddPermissionsToUSerAndAuthorizeRouteWithPermissions()
       {
+        var roleName = "testing_role";
         var client = _testServer.CreateClient();
         var userManager = _testServer.Host.Services.GetService(typeof(UserManager<ApplicationUser>)) as UserManager<ApplicationUser>;
         var signInManager = _testServer.Host.Services.GetService(typeof(SignInManager<ApplicationUser>)) as SignInManager<ApplicationUser>;
-        
+        var roleManager = _testServer.Host.Services.GetService(typeof(RoleManager<ApplicationRole>)) as RoleManager<ApplicationRole>;
+
+        await new InitializeIdentity(roleManager, userManager).RegisterPermissions(typeof(PermissionsTest)).SeedClaimsAsync(roleName);
+
         var user = new ApplicationUser {
           Email = "test@gmail.com",
           UserName = "testing"
@@ -206,34 +210,18 @@ namespace Tests.Identity
         var createdUser = await userManager.CreateAsync(user, password);
         if (!createdUser.Succeeded) { throw new Exception("error on create user"); }
 
-        signInManager.Context = new DefaultHttpContext();
-        // signInManager.
-        // var signIn = await signInManager.PasswordSignInAsync(user, password, true, false);
-        // if (!signIn.Succeeded) { throw new Exception("error on signIn"); } 
+        var addToRole = await userManager.AddToRoleAsync(user, roleName);
+        if (!addToRole.Succeeded) { throw new Exception("error on add user to role"); }
 
         var principal = await signInManager.CreateUserPrincipalAsync(user);
         var token = GenerateJWT.Generate(principal.Claims, JWTConfig.Key, JWTConfig.Issuer, DateTime.Now.AddHours(1));
-        // var data = new Dictionary<string, string>();
 
-        // data.Add("email", "test@gmail.com");
-        // data.Add("password", "Aa@123456");
-        // data.Add("username", "testing");
-
-        // var formData = new FormUrlEncodedContent(data);
-
-        // var responseRegister = await client.PostAsync("/register", formData);
-        // responseRegister.EnsureSuccessStatusCode();
-        // var responseLogin = await client.PostAsync("/login", formData);
-        // responseLogin.EnsureSuccessStatusCode();
-
-       
-        // var resText = await responseLogin.Content.ReadAsStringAsync();
         var read = new JwtSecurityTokenHandler().CanReadToken(token);
         if (!read) { throw new Exception("token generated is invalid"); }
 
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, token);
 
-        var response = await client.GetAsync("/auth");
+        var response = await client.GetAsync("/auth_roles");
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadAsStringAsync();
 

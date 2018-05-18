@@ -22,8 +22,8 @@ namespace Tests.Identity
       var transformed = new TranformPermissions(typeof(PermissionsTestFixture)).ToClaimList();
       Assert.Equal(PermissionsTestFixture.Permission1.ToString(), transformed[0].Value);
       Assert.Equal(PermissionsTestFixture.Permission2.ToString(), transformed[1].Value);
-      Assert.Equal("Permission1", transformed[0].Type);
-      Assert.Equal("Permission2", transformed[1].Type);
+      Assert.Equal(ApplicationClaimTypes.Permission, transformed[0].Type);
+      Assert.Equal(ApplicationClaimTypes.Permission, transformed[1].Type);
     }
   }
 }

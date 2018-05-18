@@ -13,7 +13,7 @@ namespace Identity
 {
   public class IdentityAuthorizeAttribute : TypeFilterAttribute
   {
-    public IdentityAuthorizeAttribute() : base(typeof(IdentityAuthorizeFilter))
+    public IdentityAuthorizeAttribute(params int[] perms) : base(typeof(IdentityAuthorizeFilter))
     {
       // var cast = (int[])roles;
       // if (cast == null) 
@@ -22,35 +22,33 @@ namespace Identity
       // }
       // var args = roles.ToList().Select(v => Convert.ToInt32(v));
       // var t = Convert.ToInt32(role.ToString());
-      // Arguments = new object[] { t };
+      Arguments = new object[] { perms };
     }
   }
   public class IdentityAuthorizeFilter : IAuthorizationFilter
   {
-    // private readonly IList<int> _roles;
-    public IdentityAuthorizeFilter()
+    private readonly IList<int> _perms;
+    public IdentityAuthorizeFilter(int[] perms)
     {
-        // _roles = roles;
+        _perms = perms;
     }
 
     public void OnAuthorization(AuthorizationFilterContext context)
     {
-      var claims = context.HttpContext.User;
-      
-      if (!claims.Identity.IsAuthenticated) 
+      var user = context.HttpContext.User;
+    
+      if (!user.Identity.IsAuthenticated) 
       {
         context.Result = new UnauthorizedResult();
         return;
       }
-
-      // for (int i = 0; i < _roles.Count; i++)
-      // {
-      //   if (!claims.IsInRole(_roles[i]))
-      //   {
-      //     context.Result = new UnauthorizedResult();
-      //     break;
-      //   }
-      // }
+      var claimsValues = user.Claims.Where(c => c.Type == ApplicationClaimTypes.Permission).Select(c => Convert.ToInt32(c.Value));
+      foreach (var perm in _perms) {
+        if (!claimsValues.Contains(perm)) {
+          context.Result = new UnauthorizedResult();
+          break;
+        }
+      }
     }
   }
 }

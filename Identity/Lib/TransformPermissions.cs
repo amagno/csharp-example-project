@@ -40,7 +40,7 @@ namespace Identity.Lib
       var claims = new List<Claim>();
 
       foreach (KeyValuePair<string, string> entry in dictionary) {
-        claims.Add(new Claim(entry.Key, entry.Value.ToString()));
+        claims.Add(new Claim(ApplicationClaimTypes.Permission, entry.Value.ToString()));
       }
       return claims;
     }

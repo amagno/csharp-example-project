@@ -42,7 +42,7 @@ namespace WebAPI.Controllers
         {
             return "authorized!";
         }
-        // [IdentityAuthorize(EPermissionsTest.Permission1)]
+        [IdentityAuthorize(PermissionsTest.Permission1, PermissionsTest.Permission2)]
         [HttpGet("auth_roles")]
         public string AuthorizedRoutePermission()
         {
