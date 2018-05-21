@@ -42,13 +42,17 @@ namespace Tests.Identity
         var builder = new WebHostBuilder()
           .ConfigureServices(services => {
             new ConfigureIdentity()
-                .SetTokenParameters(tokenConfig)
                 .SetDbContextConfig(dbOptions => {
                     dbOptions.UseInMemoryDatabase("TESTING_DATABASE_MEMORY");
                 })
                 .SetIdentityOptions(identityOptions => {
                     identityOptions.SignIn.RequireConfirmedEmail = false;
                     identityOptions.SignIn.RequireConfirmedPhoneNumber = false;
+                })
+                .SetJwtBearerOptions(jwtBearerOptions => {
+                  jwtBearerOptions.RequireHttpsMetadata = false;
+                  jwtBearerOptions.IncludeErrorDetails = true;
+                  jwtBearerOptions.TokenValidationParameters = tokenConfig;
                 })
                 .AddServices(services);
             

@@ -30,7 +30,7 @@ namespace Tests.Identity
                     .SetDbContextConfig(dbOptions => {
                         dbOptions.UseInMemoryDatabase(Guid.NewGuid().ToString());
                     })
-                    .SetTokenParameters(new TokenValidationParameters {})
+                    .SetJwtBearerOptions(jwtBearerOptions => {})
                     .AddServices(services);
                 var provider = services.BuildServiceProvider();
                 _roleManager = provider.GetService<RoleManager<ApplicationRole>>();

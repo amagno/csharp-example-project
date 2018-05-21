@@ -18,7 +18,7 @@ namespace Identity
     private readonly IConfiguration _config;
     private Action<IdentityOptions> _identityOptions;
     private Action<DbContextOptionsBuilder> _dbOptions;
-    private TokenValidationParameters _tokenParameters;
+    private Action<JwtBearerOptions> _jwtBearerOptions;
 
     public ConfigureIdentity(IConfiguration config = null)
     {
@@ -29,9 +29,9 @@ namespace Identity
       _dbOptions = setupDbContext;
       return this;
     }
-    public ConfigureIdentity SetTokenParameters(TokenValidationParameters tokenParameters)
+    public ConfigureIdentity SetJwtBearerOptions(Action<JwtBearerOptions> jwtBearerOptions)
     {
-      _tokenParameters = tokenParameters;
+      _jwtBearerOptions = jwtBearerOptions;
       return this;
     }
     public ConfigureIdentity SetIdentityOptions(Action<IdentityOptions> identityOptions)
@@ -41,7 +41,7 @@ namespace Identity
     }
     public void AddServices(IServiceCollection services)
     {
-      if ((_config == null && _dbOptions == null) || (_config == null && _tokenParameters == null)) 
+      if ((_config == null && _dbOptions == null) || (_config == null && _jwtBearerOptions == null)) 
       {
         throw new ArgumentNullException();
       }
@@ -53,15 +53,19 @@ namespace Identity
         options.Lockout.AllowedForNewUsers = true;
       });
 
-      var configureJwtToken = _tokenParameters ?? new TokenValidationParameters {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = _config["Issuer"],
-        ValidAudience = _config["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]))
-      };
+      var jwtBearerOptions = _jwtBearerOptions ?? new Action<JwtBearerOptions>((options) => {
+        options.RequireHttpsMetadata = false;
+        options.IncludeErrorDetails = true;
+        options.TokenValidationParameters = new TokenValidationParameters {
+          ValidateIssuer = true,
+          ValidateAudience = true,
+          ValidateLifetime = true,
+          ValidateIssuerSigningKey = true,
+          ValidIssuer = _config["Issuer"],
+          ValidAudience = _config["Audience"],
+          IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]))
+        };
+      });
       // Adicionando servicços
       services.AddDbContext<ApplicationIdentityDbContext>(configureDbContext);
       services.AddIdentity<ApplicationUser, ApplicationRole>(configureIdentity)
@@ -76,13 +80,7 @@ namespace Identity
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
-      }).AddJwtBearer(options => {
-        // options.Audience = configureJwtToken.ValidAudience ?? throw new Exception("Invalid audience");
-        // options.Authority = configureJwtToken.ValidIssuer ?? throw new Exception("Invalid issuer");
-        options.RequireHttpsMetadata = false;
-        options.TokenValidationParameters = configureJwtToken;
-        options.IncludeErrorDetails = true;
-      });
+      }).AddJwtBearer(jwtBearerOptions);
     }
   }
 }
