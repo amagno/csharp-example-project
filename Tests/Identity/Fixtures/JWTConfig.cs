@@ -1,4 +1,4 @@
-namespace Tests.Identity
+namespace Tests.Identity.Fixtures
 {
   public static class JWTConfig
   {

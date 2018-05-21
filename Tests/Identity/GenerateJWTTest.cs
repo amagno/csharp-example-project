@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using Identity.Lib;
 using Xunit;
+using Tests.Identity.Fixtures;
 
 namespace Tests.Identity
 {
@@ -16,7 +17,7 @@ namespace Tests.Identity
           new Claim("test", "2"),
         };
         var expires = new DateTime().AddHours(1);
-        var token = GenerateJWT.Generate(claims, JWTConfig.Key, "test", expires);
+        var token = JWT.Generate(claims, JWTConfig.Key, "test", expires);
 
         Assert.True(!string.IsNullOrEmpty(token));
       }

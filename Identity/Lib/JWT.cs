@@ -8,8 +8,23 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Identity.Lib
 {
-    public class GenerateJWT
+    public class JWT
     {
+        private readonly string _key;
+        private readonly string _issuer;
+        public JWT(string key, string issuer)
+        {
+            _key = key;
+            _issuer = issuer;
+        }
+        public string Generate(IEnumerable<Claim> claims)
+        {
+            return JWT.Generate(claims, _key, _issuer, DateTime.Now.AddMinutes(30));
+        }
+        public string Generate(IEnumerable<Claim> claims, DateTime expires)
+        {
+            return JWT.Generate(claims, _key, _issuer, expires);
+        }
         public static string Generate(IEnumerable<Claim> claims, string key, string issuer, DateTime? expires)
         {
             var symmKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));

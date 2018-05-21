@@ -11,7 +11,8 @@ using Identity.Lib;
 using Tests.Identity;
 using Microsoft.AspNetCore.Authorization;
 
-namespace WebAPI.Controllers
+
+namespace Tests.Identity.Fixtures
 {   
     public class RegisterModel {
         public string email { get; set; }
@@ -75,7 +76,7 @@ namespace WebAPI.Controllers
             var principal = await signInManager.CreateUserPrincipalAsync(user);
 
 
-            var jwt = GenerateJWT.Generate(principal.Claims, JWTConfig.Key, "http://localhost", DateTime.Today.AddHours(1));
+            var jwt = JWT.Generate(principal.Claims, JWTConfig.Key, "http://localhost", DateTime.Today.AddHours(1));
             return Ok(jwt);
         }
         // Test register

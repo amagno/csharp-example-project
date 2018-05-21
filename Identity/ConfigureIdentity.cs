@@ -20,6 +20,14 @@ namespace Identity
     private Action<DbContextOptionsBuilder> _dbOptions;
     private Action<JwtBearerOptions> _jwtBearerOptions;
 
+    public static ConfigureIdentity Make(IConfiguration config)
+    {
+      return new ConfigureIdentity(config); 
+    }
+    public static ConfigureIdentity Make()
+    {
+      return new ConfigureIdentity(); 
+    }
     public ConfigureIdentity(IConfiguration config = null)
     {
       _config = config;
@@ -41,18 +49,18 @@ namespace Identity
     }
     public void AddServices(IServiceCollection services)
     {
-      if ((_config == null && _dbOptions == null) || (_config == null && _jwtBearerOptions == null)) 
-      {
-        throw new ArgumentNullException();
+      if ((_config == null && _dbOptions == null) || (_config == null && _jwtBearerOptions == null)) {
+        throw new ArgumentNullException("Please set config or sets for DbOptions and JwtBearerOptions");
       }
-
+      // DbContextConfig
       var configureDbContext = _dbOptions ?? new Action<DbContextOptionsBuilder>((options) => {
         options.UseSqlServer(_config.GetConnectionString("DefaultConnection"));
       });
+      // Identity config
       var configureIdentity = _identityOptions ?? new Action<IdentityOptions>((options) => {
         options.Lockout.AllowedForNewUsers = true;
       });
-
+      //  jwtConfig
       var jwtBearerOptions = _jwtBearerOptions ?? new Action<JwtBearerOptions>((options) => {
         options.RequireHttpsMetadata = false;
         options.IncludeErrorDetails = true;
@@ -61,20 +69,17 @@ namespace Identity
           ValidateAudience = true,
           ValidateLifetime = true,
           ValidateIssuerSigningKey = true,
-          ValidIssuer = _config["Issuer"],
-          ValidAudience = _config["Audience"],
+          ValidIssuer = _config["Jwt:Issuer"],
+          ValidAudience = _config["Jwt:Audience"],
           IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]))
         };
       });
       // Adicionando servicços
       services.AddDbContext<ApplicationIdentityDbContext>(configureDbContext);
       services.AddIdentity<ApplicationUser, ApplicationRole>(configureIdentity)
-        .AddEntityFrameworkStores<ApplicationIdentityDbContext>()
-        // .AddUserStore<IdentityUserStore>()        
-        // .AddUserManager<IdentityUserManager>()
-        // .AddClaimsPrincipalFactory<IdentityClaimsPrincipalFactory>()        
+        .AddEntityFrameworkStores<ApplicationIdentityDbContext>()      
         .AddDefaultTokenProviders();
-        
+      // Auth
       services.AddAuthentication(options => {
         options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

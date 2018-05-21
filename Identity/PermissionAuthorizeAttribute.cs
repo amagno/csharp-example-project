@@ -15,13 +15,6 @@ namespace Identity
   {
     public PermissionAuthorizeAttribute(params int[] perms) : base(typeof(PermissionAuthorizeFilter))
     {
-      // var cast = (int[])roles;
-      // if (cast == null) 
-      // {
-      //   throw new Exception("Unable to cast roles");
-      // }
-      // var args = roles.ToList().Select(v => Convert.ToInt32(v));
-      // var t = Convert.ToInt32(role.ToString());
       Arguments = new object[] { perms };
     }
   }
@@ -37,8 +30,7 @@ namespace Identity
     {
       var user = context.HttpContext.User;
     
-      if (!user.Identity.IsAuthenticated) 
-      {
+      if (!user.Identity.IsAuthenticated) {
         context.Result = new UnauthorizedResult();
         return;
       }

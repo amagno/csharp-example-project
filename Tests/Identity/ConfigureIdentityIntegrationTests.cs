@@ -14,47 +14,10 @@ using Identity.Lib;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Microsoft.IdentityModel.Tokens;
+using Tests.Identity.Fixtures;
 
 namespace Tests.Identity
 {
-  public class WebHostFixture : IDisposable
-  {
-    private readonly IWebHost _webHost;
-    private UserManager<ApplicationUser> _userManager;
-    private RoleManager<ApplicationRole> _roleManager;
-    public WebHostFixture()
-    {
-        _webHost = WebHost.CreateDefaultBuilder()
-            .ConfigureServices(services => {
-                new ConfigureIdentity()
-                    .SetDbContextConfig(dbOptions => {
-                        dbOptions.UseInMemoryDatabase(Guid.NewGuid().ToString());
-                    })
-                    .SetJwtBearerOptions(jwtBearerOptions => {})
-                    .AddServices(services);
-                var provider = services.BuildServiceProvider();
-                _roleManager = provider.GetService<RoleManager<ApplicationRole>>();
-                _userManager = provider.GetService<UserManager<ApplicationUser>>();
-            })
-            .UseStartup<FakeStartup>()
-            .Build();
-
-    }
-    public UserManager<ApplicationUser> GetUserManager()
-    {
-      return _userManager ?? throw new Exception("User manager is null");
-    }
-    public RoleManager<ApplicationRole> GetRoleManager()
-    {
-      return _roleManager ?? throw new Exception("Role manager is null");
-    }
-    public void Dispose()
-    {
-        System.Console.Out.WriteLine("Disposing fixture");        
-        _webHost.Dispose();
-    }
-  }
-
   public class ConfigureIdentityIntegrationTests
   {
       [Fact]
@@ -63,10 +26,7 @@ namespace Tests.Identity
         using (var fixture = new WebHostFixture())
         {
             var roleManager = fixture.GetRoleManager();
-
-            var initializer = new InitializeIdentity(roleManager);
-
-            await initializer.RegisterPermissions(typeof(PermissionsTest)).SeedClaimsAsync();
+            await InitializeIdentity.SeedPermissions<PermissionsTest>(roleManager).SeedAsync();
         
             var roles = roleManager.Roles.ToList();
             var claims = await roleManager.GetClaimsAsync(roles[0]);
@@ -83,7 +43,6 @@ namespace Tests.Identity
         using (var fixture = new WebHostFixture())
         {
             var userManager = fixture.GetUserManager();
-
             var user = new ApplicationUser {
               Email = "test@gmail.com",
               UserName = "testing"
@@ -95,7 +54,6 @@ namespace Tests.Identity
             Assert.True(created.Succeeded);
             Assert.Equal(find.Email, user.Email);
             Assert.Single(users);
-
         }
       }
       [Fact]
@@ -105,14 +63,38 @@ namespace Tests.Identity
         {
             var userManager = fixture.GetUserManager();
             var roleManager = fixture.GetRoleManager();
+            await InitializeIdentity.SeedPermissions<PermissionsTest>(roleManager).SeedAsync();
 
-            var initializer = new InitializeIdentity(roleManager);
-
-            await initializer.RegisterPermissions(typeof(PermissionsTest)).SeedClaimsAsync();
             var defaultRole = roleManager.Roles.ToList()[0];
             var claims = await roleManager.GetClaimsAsync(defaultRole);
-            // var names = Enum.GetNames(typeof(ERolesTest)).ToList();
 
+            var user = new ApplicationUser {
+              Email = "test@gmail.com",
+              UserName = "testing"
+            };
+            // IN SEQUENCE
+            var created = await userManager.CreateAsync(user, "Aa@123456");
+            // 
+            var result = await userManager.AddClaimsAsync(user, claims);
+            //  
+            var userClaims = await userManager.GetClaimsAsync(user);
+
+            Assert.True(result.Succeeded);
+            Assert.Equal(2, claims.Count());
+            Assert.Equal(2, userClaims.Count());
+        }
+      }
+      [Fact]
+      public async Task TestInitializeWithConfig()
+      {
+        using (var fixture = new WebHostFixtureWithConfig())
+        {
+            var userManager = fixture.GetUserManager();
+            var roleManager = fixture.GetRoleManager();
+            await InitializeIdentity.SeedPermissions<PermissionsTest>(roleManager).SeedAsync();
+
+            var defaultRole = roleManager.Roles.ToList()[0];
+            var claims = await roleManager.GetClaimsAsync(defaultRole);
 
             var user = new ApplicationUser {
               Email = "test@gmail.com",

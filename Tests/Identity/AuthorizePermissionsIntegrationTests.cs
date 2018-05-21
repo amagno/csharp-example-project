@@ -19,57 +19,16 @@ using System.Collections.Generic;
 using Identity.Lib;
 using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Tests.Identity.Fixtures;
 
 namespace Tests.Identity
 {
-  public class AuthorizeIntegrationTests : IDisposable
+  public class AuthorizePermissionsIntegrationTests : IDisposable
     {
       private readonly TestServer _testServer;
-      public AuthorizeIntegrationTests()
+      public AuthorizePermissionsIntegrationTests()
       {
-        var tokenConfig = new TokenValidationParameters {
-          ValidateIssuer = false,
-          ValidateAudience = false,
-          ValidateLifetime = false,
-          ValidateIssuerSigningKey = true,
-          ValidateActor = false,
-          ValidateTokenReplay = false,
-          ValidIssuer = JWTConfig.Audience,
-          ValidAudience = JWTConfig.Audience,
-          IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JWTConfig.Key))
-          
-        };
-        var builder = new WebHostBuilder()
-          .ConfigureServices(services => {
-            new ConfigureIdentity()
-                .SetDbContextConfig(dbOptions => {
-                    dbOptions.UseInMemoryDatabase("TESTING_DATABASE_MEMORY");
-                })
-                .SetIdentityOptions(identityOptions => {
-                    identityOptions.SignIn.RequireConfirmedEmail = false;
-                    identityOptions.SignIn.RequireConfirmedPhoneNumber = false;
-                })
-                .SetJwtBearerOptions(jwtBearerOptions => {
-                  jwtBearerOptions.RequireHttpsMetadata = false;
-                  jwtBearerOptions.IncludeErrorDetails = true;
-                  jwtBearerOptions.TokenValidationParameters = tokenConfig;
-                })
-                .AddServices(services);
-            
-           
-            services.AddMvc(options => {
-              // options.Filters.Add<IdentityAuthorizeAttribute>();
-            });
-          })
-          .Configure(app => {
-            app.UseAuthentication();
-            app.UseMvc(routes => {
-              routes.MapRoute("default", "{controller=FakeIdentityAuthorizeTestsController}/{action=Index}/{id?}");
-            });
-          });
-          var testServer = new TestServer(builder);
-          testServer.BaseAddress = new Uri("http://localhost");
-          _testServer = testServer;
+        _testServer = new WebHostTestServer().GetServer();
       }
       public void Dispose()
       {
@@ -175,7 +134,7 @@ namespace Tests.Identity
         // create claims
         var principal = await signInManager.CreateUserPrincipalAsync(user);
         // generate token and validate then
-        var token = GenerateJWT.Generate(principal.Claims, JWTConfig.Key, JWTConfig.Issuer, DateTime.Now.AddHours(1));
+        var token = JWT.Generate(principal.Claims, JWTConfig.Key, JWTConfig.Issuer, DateTime.Now.AddHours(1));
         var read = new JwtSecurityTokenHandler().CanReadToken(token);
         if (!read) { throw new Exception("token generated is invalid"); }
         // set token to request header
@@ -188,7 +147,7 @@ namespace Tests.Identity
         Assert.Equal("authorized!", result);
       }
       [Fact]
-      public async Task TestAddPermissionsToUSerAndAuthorizeRouteWithPermissions()
+      public async Task TestAddPermissionsToUserAndAuthorizeRouteWithPermissions()
       {
         var roleName = "testing_role";
         var client = _testServer.CreateClient();
@@ -196,7 +155,9 @@ namespace Tests.Identity
         var signInManager = _testServer.Host.Services.GetService(typeof(SignInManager<ApplicationUser>)) as SignInManager<ApplicationUser>;
         var roleManager = _testServer.Host.Services.GetService(typeof(RoleManager<ApplicationRole>)) as RoleManager<ApplicationRole>;
 
-        await new InitializeIdentity(roleManager, userManager).RegisterPermissions(typeof(PermissionsTest)).SeedClaimsAsync(roleName);
+        // await new InitializeIdentity(roleManager, userManager).RegisterPermissions(typeof(PermissionsTest)).SeedClaimsAsync(roleName);
+
+        await InitializeIdentity.SeedPermissions<PermissionsTest>(roleManager).SeedAsync(roleName);
 
         var user = new ApplicationUser {
           Email = "test@gmail.com",
@@ -210,7 +171,7 @@ namespace Tests.Identity
         if (!addToRole.Succeeded) { throw new Exception("error on add user to role"); }
 
         var principal = await signInManager.CreateUserPrincipalAsync(user);
-        var token = GenerateJWT.Generate(principal.Claims, JWTConfig.Key, JWTConfig.Issuer, DateTime.Now.AddHours(1));
+        var token = JWT.Generate(principal.Claims, JWTConfig.Key, JWTConfig.Issuer, DateTime.Now.AddHours(1));
 
         var read = new JwtSecurityTokenHandler().CanReadToken(token);
         if (!read) { throw new Exception("token generated is invalid"); }
