@@ -17,6 +17,10 @@ namespace Identity
     {
       Arguments = new object[] { perms };
     }
+    public PermissionAuthorizeAttribute(params string[] perms) : base(typeof(PermissionAuthorizeFilter))
+    {
+      Arguments = new object[] { perms.Select(v => Int32.Parse(v)) };
+    }
   }
   public class PermissionAuthorizeFilter : IAuthorizationFilter
   {

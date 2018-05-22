@@ -10,6 +10,7 @@ using Identity.Models;
 using Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Identity.Lib;
+using System.Text.RegularExpressions;
 
 namespace Identity
 {
@@ -26,7 +27,7 @@ namespace Identity
     }
     public static ConfigureIdentity Make()
     {
-      return new ConfigureIdentity(); 
+      return new ConfigureIdentity();
     }
     public ConfigureIdentity(IConfiguration config = null)
     {

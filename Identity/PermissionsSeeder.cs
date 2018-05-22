@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Identity.Lib;
 using Identity.Models;
 using Microsoft.AspNetCore.Identity;
+using System.Linq;
+
 
 namespace Identity 
 {
@@ -36,15 +38,19 @@ namespace Identity
         throw new Exception("Please register enum roles whit: 'RegisterEnumRoles<Enum>()'");
       }
       var defaultRole = await CreateRoleAsyncIfNotExists(defaultRoleName);
+      var existsClaims = await _roleManager.GetClaimsAsync(defaultRole);
       foreach(var claim in _claims) 
       {
-        var createdClaim = await _roleManager.AddClaimAsync(defaultRole, claim);
-        if (!createdClaim.Succeeded) {
-          throw new Exception(createdClaim.Errors.ToString());
+        var any = existsClaims.Any(c => c.Value == claim.Value);
+        if (!any) {
+          var createdClaim = await _roleManager.AddClaimAsync(defaultRole, claim);
+          if (!createdClaim.Succeeded) {
+            throw new Exception(createdClaim.Errors.ToString());
+          }
         }
       }
     }
-    private async Task<ApplicationRole> CreateRoleAsyncIfNotExists(string roleName)
+    public async Task<ApplicationRole> CreateRoleAsyncIfNotExists(string roleName)
     {
       var exists = await _roleManager.RoleExistsAsync(roleName);
       if (exists) {

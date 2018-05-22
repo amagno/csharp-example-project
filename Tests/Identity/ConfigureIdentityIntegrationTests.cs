@@ -85,6 +85,35 @@ namespace Tests.Identity
         }
       }
       [Fact]
+      public async Task TestCreateUserAndDuplicatesClaims()
+      {
+        using (var fixture = new WebHostFixture())
+        {
+            var userManager = fixture.GetUserManager();
+            var roleManager = fixture.GetRoleManager();
+            await InitializeIdentity.SeedPermissions<PermissionsTest>(roleManager).SeedAsync();
+            await InitializeIdentity.SeedPermissions<PermissionsTest>(roleManager).SeedAsync();
+
+            var defaultRole = roleManager.Roles.ToList()[0];
+            var claims = await roleManager.GetClaimsAsync(defaultRole);
+
+            var user = new ApplicationUser {
+              Email = "test@gmail.com",
+              UserName = "testing"
+            };
+            // IN SEQUENCE
+            var created = await userManager.CreateAsync(user, "Aa@123456");
+            // 
+            var result = await userManager.AddClaimsAsync(user, claims);
+            //  
+            var userClaims = await userManager.GetClaimsAsync(user);
+
+            Assert.True(result.Succeeded);
+            Assert.Equal(2, claims.Count());
+            Assert.Equal(2, userClaims.Count());
+        }
+      }
+      [Fact]
       public async Task TestInitializeWithConfig()
       {
         using (var fixture = new WebHostFixtureWithConfig())

@@ -59,10 +59,11 @@ namespace Tests.Identity.Fixtures
     private RoleManager<ApplicationRole> _roleManager;
     public WebHostFixtureWithConfig()
     {
+        var ds = Path.DirectorySeparatorChar;
         _webHost = WebHost.CreateDefaultBuilder()
             .ConfigureServices(services => {
                 var config = new ConfigurationBuilder()
-                        .SetBasePath(Directory.GetCurrentDirectory() + "..\\..\\..\\..\\..\\Identity")
+                        .SetBasePath(Directory.GetCurrentDirectory() + $"..{ds}..{ds}..{ds}..{ds}")
                         .AddJsonFile("appsettings.json")
                         .Build();
               

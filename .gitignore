@@ -1,5 +1,6 @@
 .vscode/
-
+**/[Mm]igrations/*
+**coverage.*
 # Created by https://www.gitignore.io/api/code,csharp,aspnetcore
 
 ### ASPNETCore ###

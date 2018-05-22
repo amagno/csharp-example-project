@@ -12,6 +12,7 @@ using Identity;
 using Microsoft.AspNetCore.Identity;
 using Identity.Models;
 using WebAPI.Common;
+using System.IO;
 
 namespace WebAPI
 {
@@ -27,12 +28,13 @@ namespace WebAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            new ConfigureIdentity(Configuration).AddServices(services);
+            var identity = ConfigureIdentity.Make(Configuration);
+            identity.AddServices(services);
             services.AddMvc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider services)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider serviceProvider)
         {
             if (env.IsDevelopment())
             {
@@ -40,8 +42,15 @@ namespace WebAPI
             }
             app.UseAuthentication();
             app.UseMvc();
-            // 
+            ConfigureAsync(serviceProvider).Wait();
      
+        }
+        public async Task ConfigureAsync(IServiceProvider serviceProvider)
+        {
+            var roleManager = serviceProvider.GetService<RoleManager<ApplicationRole>>();
+            await InitializeIdentity
+                .SeedPermissions<Permissions>(roleManager)
+                .SeedAsync();
         }
     }
 }

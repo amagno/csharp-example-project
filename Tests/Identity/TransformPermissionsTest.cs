@@ -14,7 +14,7 @@ namespace Tests.Identity
     public const int Permission1 = 1;
     public const int Permission2 = 2;
   }
-  public class TranformEnumRolesTest
+  public class TranformPermissionsTest
   {
     [Fact]
     public void TranformToClaimsListTest()
