@@ -1,7 +1,7 @@
 language: csharp
 solution: csharp-example-project.sln
 mono: latest
-dotnet: 2.0.0
+dotnet: 2.1.2
 env:
   global:
     - DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
