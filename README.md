@@ -5,4 +5,4 @@
   - Implementar Identidade segregada do Dominio (Identity) para funções de autenticação e autorização
 
 
-# MOVIDO PARA O VSTS
+# MOVIDO PARA O Azure DevOps
